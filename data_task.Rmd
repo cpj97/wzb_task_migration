@@ -1,0 +1,119 @@
+---
+title: "Data task"
+author: "Camilo Pedraza Jimenez"
+date: "`r format(Sys.time(), '%B %d, %Y | %H:%M:%S | %Z')`"
+output: 
+  pdf_document:
+    pandoc_args: --listings
+    includes:
+      in_header: preamble.tex
+header-includes:
+  - \usepackage{comment}
+params:
+  soln: TRUE
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include = T}
+#Load used packages
+library(pacman)
+pacman::p_load(tidyverse, ggplot2, vtable, rempsyc, knitr)
+```
+
+## Task 1
+
+Load the Lalonde data set (see attachment) into either Stata or R. The
+data belongs to a study that looked at the effectiveness of a job
+training program (the treatment) on the real earnings of an individual,
+a couple years after completion of the program. It consists of a number
+of demographic variables as well as a treatment indicator and the real
+earnings in the year 1978 (the response).
+
+```{r}
+lalonde  <- read.csv("lalonde.csv")
+```
+
+## Task 2
+
+Produce a table with summary statistics (incl. mean, standard deviation)
+for the variables in the dataset.
+
+```{r, echo=TRUE, , fig.pos='H'}
+lalonde %>%
+  select(!nr) %>% #The variable nr includes only the number of the row, so it is not necessary for the summary statistics
+  st(., simple.kable = T) #Function st() from the package vtable. simple.kable = T option to export the table to PDF format
+```
+
+Taking the first 5 variables as examples for the 445 observations in the dataset, we can see that: 
+\begin{itemize}
+  \item \textbf{Age:} The average age is 25 with a standard deviation of 7.1 years. 
+  \item \textbf{Education:} The average years of education is 10 with a standard deviation of 1.8 years.
+  \item \textbf{Black:} As a dummy variable, since the mean is above 0.5 (0.83), it is possible to say that the majority of people on the dataset are black. 
+  \item \textbf{Hispanic:} As a dummy variable, since the mean is bellow 0.5 (0.088), it is possible to say that the majority of people on the dataset are not Hispanic. 
+  \item \textbf{Married:} As a dummy variable, since the mean is below 0.5 (0.17), it is possible to say that the majority of people on the dataset are not Married. 
+\end{itemize}
+## Task 3
+
+Produce two histograms showing the distribution of real earnings 1978
+(re78) for individuals in the treatment and in the control group
+separately.
+
+```{r, echo=TRUE, fig.pos='H'}
+ggplot(lalonde, aes(x = re78, fill = factor(treat))) +                      #Factor by treatment to get both histograms in one graph
+  geom_histogram(position = "identity", alpha = 0.8, bins = 30) +           #alpha option to ajust the transparency
+  scale_fill_manual(values = c("darkred", "grey"),
+                    breaks = c(0, 1),
+                    labels = c("Control", "Treatment")) +
+  labs(title = "Distribution of real earnings in 1978 based on treatment",
+       x = "Earnings",
+       y = "Number of observations",
+       fill = "Treatment type") +
+  theme_minimal()
+```
+
+The distribution of the real earnings in 1978 is fairly even between the
+treated and the control group, since the distribution of the earnings
+for both groups stays mostly between 0 and 20000. Apart from the
+similarity of both distributions, it is possible to notice that the
+control group has more observation than the treatment group, since the
+higher frequencies can be found in the control group. It is possible to
+confirm that the control group is bigger by looking at the summary
+statistics, in which the mean of the `treat` variable is 0.42, which is
+lower than 0.5. Since the `treat` variable only takes the values 0 and
+1, a mean lower than 0.5 would indicate that more control observations
+are found in the dataset. Finally, the highest earnings can be seen
+mostly for the treatment group, over 20000. The highest earnings for the
+control (40000) and the treatment (around 35000 to 60000) groups.
+
+## Task 4
+
+Test whether the difference between treatment and control group is
+statistically significant at conventional levels. What do you find?
+
+```{r, echo=TRUE, fig.pos='H'}
+nice_t_test(lalonde,              #nice_t_test() function from the rempsyc package for a summary of the t-test   
+            response = "re78",
+            group = "treat",
+            warning = FALSE) %>%
+  knitr::kable()                 #kable() function from the knitr package to get an organized table 
+```
+
+Based on the p-value (0.007893), it is possible to argue that, with a
+level of confidence of 99%, we can reject the null hypothesis
+($\mu_1 = \mu_2$ the mean of earnings for the control and treatment
+group are equal). This means that we have sufficient evidence to say
+that the mean of earning in 1978 between the two populations is
+different. Although with the histogram graphs, the distribution of
+earnings seemed similar, there could be two possible reasons that make
+the difference in the average earnings significant:
+\begin{itemize}
+  \item The highest earnings of the treatment group.
+  \item The high frequency of observations from the control group that have
+earnings around 0.
+\end{itemize}
